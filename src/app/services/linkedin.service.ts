@@ -129,12 +129,10 @@ export class LinkedInService {
         const statusSelected = status;
         const data = {
           status: statusSelected,
-          name: profile.name,
+          name: this.createId(profile.name),
         };
 
-        return this.http.post(API_ENDPOINTS.updateStatus, {
-          body: JSON.stringify(data),
-        });
+        return this.http.post(API_ENDPOINTS.updateStatus, data);
       })
     );
   }
