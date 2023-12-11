@@ -1,109 +1,79 @@
 <main id="container-main" class="container">
-  @if (isExtensionLoading) {
-  <mat-spinner></mat-spinner>
-  } @if (isLinkedinPage === false) {
-  <div id="not-linkedin-page">Not a LinkedIn profile page</div>
-  } @else { @if (!isLogged) {
-  <google-auth-button />
-  } @else {
   <div class="custom-card">
-    <app-user-profile
-      [userAvatar]="userAvatar"
-      [userEmail]="userEmail"
-      [userName]="userName"
-    ></app-user-profile>
-    <div class="card-content">
-      <!-- Select -->
-      <mat-form-field>
-        <mat-label>Positions</mat-label>
-        <mat-select [formControl]="positionsControl">
-          <mat-select-trigger>
-            @if ((positionsControl.value?.length || 0) > 1) {
-            <span class="example-additional-selection">
-              {{ positionsControl.value }}
-            </span>
-            }
-          </mat-select-trigger>
-          @for (position of positions; track position) {
-          <mat-option [value]="position">{{ position }}</mat-option>
+    @if (isLogged) {
+      <app-user-profile
+        [userAvatar]="userAvatar"
+        [userEmail]="userEmail"
+        [userName]="userName"
+      ></app-user-profile>
+    } @else {
+      <google-auth-button />
+    }
+  @if (isExtensionLoading) {
+    <div class="spinner">
+      <mat-spinner [diameter]="200"></mat-spinner>
+    </div>
+  } @else if (isExtensionLoading === false) {
+    @if (isLinkedinPage === false) {
+    <div id="not-linkedin-page">Not a LinkedIn profile page</div>
+    } @else {
+      @if (alreadyContacted) {
+        <contacted [status]="candidate!.status" ></contacted>
+      } @else {
+        <div class="card-content">
+          <position-wizard
+          (candidateEvaluation)="candidateEvaluatedHandler($event)"
+          [evaluation]="evaluation"
+          [positions]="positions"
+          [messageGenerated]="messageGenerated"
+          ></position-wizard>
+    
+          <!-- Loader -->
+          @if (isLoading) {
+          <div>
+            <span>{{ loadingMessage }}</span>
+            <mat-progress-bar mode="query"></mat-progress-bar>
+          </div>
+          } @if (messageGenerated) {
+          <div style="margin-bottom: 20px;">Message generated! Check your LinkedIn chat window.</div>
           }
-        </mat-select>
-      </mat-form-field>
-      <!-- Evaluation text -->
-      @if (this.evaluation.status === false) {
-      <p>Evaluation:</p>
-      <div class="status-message" style="display: flex; align-items: center">
-        <mat-icon
-          style="overflow: inherit"
-          [style.color]="'red'"
-          class="material-icons"
-          >{{ "warning" }}</mat-icon
-        >
-        <p style="margin-left: 8px">{{ evaluation.message }}</p>
-      </div>
-      } @else if (this.evaluation.status === true) {
-      <p>Evaluation:</p>
-      <div class="status-message" style="display: flex; align-items: center">
-        <mat-icon
-          style="overflow: inherit"
-          [style.color]="'green'"
-          class="material-icons"
-          >{{ "success" }}</mat-icon
-        >
-        <p style="margin-left: 8px">{{ evaluation.message }}</p>
-      </div>
+        </div>
+        <div class="card-actions">
+          @if(candidateEvaluated === true) {
+            <button
+                mat-raised-button
+                (click)="generateMessage()"
+                color="primary"
+                class="btn generate"
+                [disabled]="isLoading"
+              >
+                <mat-icon
+                  aria-hidden="false"
+                  aria-label="generate message"
+                  fontIcon="create"
+                ></mat-icon>
+                Generate message
+              </button>
+          }
+          @if(messageGenerated) {
+            <button
+                mat-raised-button
+                (click)="markAsContacted()"
+                color="primary"
+                class="btn generate"
+                [disabled]="isLoading"
+              >
+                <mat-icon
+                  aria-hidden="false"
+                  aria-label="mark as contacted"
+                  fontIcon="checkmark"
+                ></mat-icon>
+                Mark as contacted
+              </button>
+          }
+        </div>
       }
-
-      <!-- Loader -->
-      @if (isLoading) {
-      <div>
-        <span>{{ loadingMessage }}</span>
-        <mat-progress-bar mode="query"></mat-progress-bar>
-      </div>
-      } @if (messageGenerated) {
-      <div>Message generated! Check your LinkedIn chat window.</div>
-      }
-    </div>
-    <div class="card-actions">
-      @if (!contacted) { 
-        @if (!messageGenerated) {
-          <button
-            mat-raised-button
-            (click)="generateMessage()"
-            color="primary"
-            class="btn generate"
-            [disabled]="!positionSelected || isLoading"
-          >
-            <mat-icon
-              aria-hidden="false"
-              aria-label="generate message"
-              fontIcon="create"
-            ></mat-icon>
-            Generate message
-          </button>
-        } @else if (messageGenerated) {
-          <button
-            mat-raised-button
-            (click)="markAsContacted()"
-            color="primary"
-            class="btn generate"
-            [disabled]="!positionSelected || isLoading"
-          >
-            <mat-icon
-              aria-hidden="false"
-              aria-label="mark as contacted"
-              fontIcon="checkmark"
-            ></mat-icon>
-            Mark as contacted
-          </button>
-        } 
-      } @else if (contacted) { 
-        <p>Candidate was contacted successfully.</p> 
-      }
-    </div>
-    <status-selector [status]="'discarded candidate'"></status-selector>
-
-  </div>
+    }
   }
-  }
+</div>
 </main>

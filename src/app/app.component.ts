@@ -1,20 +1,22 @@
 import { Component, inject, NgZone } from '@angular/core';
-import {
-  catchError,
-  combineLatest,
-  delay,
-  finalize,
-  forkJoin,
-  map,
-  of,
-  switchMap,
-  tap,
-} from 'rxjs';
+import { catchError, finalize, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { LinkedInService } from './services/linkedin.service';
 import { FormControl } from '@angular/forms';
 import { GoogleLoginService } from './components/auth/google-login.service';
 import { ChromeService } from './services/chrome.service';
-import { MESSAGE } from './services/message';
+
+interface ICandidate {
+  company: string;
+  country: string;
+  id: number;
+  message: string;
+  name: string;
+  position: string;
+  status: string;
+  unique_id: string;
+  url: string;
+  years_experience: string;
+}
 
 @Component({
   selector: 'app-root',
@@ -38,7 +40,7 @@ export class AppComponent {
   public userAvatar = '';
   public userEmail = '';
   public isLinkedinPage: boolean | null = null;
-  public candidate = {};
+  public candidate: ICandidate = {} as ICandidate;
 
   public positionSelected = false;
   public loadingMessage = '';
@@ -50,6 +52,8 @@ export class AppComponent {
   public messageGenerated = false;
   public contacted = false;
   public isLogged = false;
+  public candidateEvaluated: boolean | null = null;
+  public alreadyContacted: boolean | null = null;
 
   ngOnInit() {
     this.loginService.checkSignIn().subscribe((logged) => {
@@ -67,7 +71,7 @@ export class AppComponent {
     this.linkedinService
       .isLinkedIn()
       .pipe(
-        tap(() => this.ngZone.run(() => this.isExtensionLoading = true)),
+        tap(() => this.ngZone.run(() => (this.isExtensionLoading = true))),
         switchMap((isLinkedIn) => {
           if (isLinkedIn) {
             return forkJoin({
@@ -79,9 +83,11 @@ export class AppComponent {
               candidate: this.linkedinService.contentLoadedHandler(),
             }).pipe(
               tap(({ positions, candidate }) => {
-                console.log(candidate);
-                this.candidate = candidate;
+                this.candidate = candidate as ICandidate;
                 this.positions = positions;
+                if (candidate) {
+                  this.alreadyContacted = true;
+                }
               }),
               map(() => isLinkedIn)
             );
@@ -91,49 +97,24 @@ export class AppComponent {
         catchError((error) => {
           console.error('Error occurred:', error);
           return of(false);
-        }),
+        })
       )
       .subscribe((isLinkedIn) => {
         this.ngZone.run(() => {
-          this.isLinkedinPage = !!isLinkedIn;
+          this.isLinkedinPage = isLinkedIn;
           this.isExtensionLoading = false;
         });
       });
+  }
 
-    this.positionsControl.valueChanges.subscribe((selectedPosition) => {
-      this.positionSelected = !!selectedPosition?.length;
-      this.loadingMessage = 'Evaluating profile';
-      this.isLoading = true;
-      combineLatest([
-        this.linkedinService.evaluateCandidateProfile({
-          position: selectedPosition!,
-          userEmail: this.userEmail,
-          userName: this.userName,
-        }),
-        this.chromeService.sendMessage({
-          type: MESSAGE.SAVE_POSITION,
-          message: selectedPosition!,
-        }),
-      ])
-        .pipe(
-          finalize(() => {
-            this.ngZone.run(() => {
-              this.isLoading = false;
-              this.loadingMessage = '';
-            });
-          })
-        )
-        .subscribe(([{ status, message }]) => {
-          console.log('Message evaluated', message);
-          this.ngZone.run(() => {
-            this.evaluation.status = status === 'true';
-            this.evaluation.message = message.content;
-          });
-        });
-    });
+  candidateEvaluatedHandler(evaluated: boolean) {
+    if (evaluated) {
+      this.candidateEvaluated = true;
+    }
   }
 
   public generateMessage() {
+    this.candidateEvaluated = false;
     if (this.positionsControl) {
       this.isLoading = true;
       this.loadingMessage = 'Message generation in process';
@@ -179,13 +160,40 @@ export class AppComponent {
   }
 
   markAsContacted() {
-    this.linkedinService.updateStatus('contacted').subscribe(() => {
-      this.ngZone.run(() => {
-        this.contacted = true;
-      });
-      this.linkedinService.saveCandidate().subscribe((res) => {
-        console.log('candidate saved', res);
-      });
-    });
+    this.linkedinService.saveCandidate()
+      .pipe(
+        switchMap(savedCandidate => {
+          return this.linkedinService.updateStatus('contacted')
+        })
+      ).subscribe((updatedCandidate: any) => {
+        this.ngZone.run(() => {
+          console.log(updatedCandidate, this.candidate);
+          this.candidate = updatedCandidate;
+          this.contacted = true;
+          this.alreadyContacted = true;
+        });
+      })
+
+    // this.linkedinService.updateStatus('contacted').subscribe(() => {
+    //   this.linkedinService
+    //     .saveCandidate()
+    //     .pipe(
+    //       switchMap((candidate: any) => {
+    //         console.log('pre candidate');
+    //         return this.linkedinService.getCandidate(
+    //           this.linkedinService.createId(candidate.name)
+    //         );
+    //       })
+    //     )
+    //     .subscribe((savedCandidate: any) => {
+    //       console.log('candidate saved', savedCandidate);
+    //       this.ngZone.run(() => {
+    //         console.log(savedCandidate, this.candidate);
+    //         this.candidate = savedCandidate;
+    //         this.contacted = true;
+    //         this.alreadyContacted = true;
+    //       });
+    //     });
+    // });
   }
 }

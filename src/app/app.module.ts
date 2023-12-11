@@ -16,11 +16,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
 import { StatusSelectorComponent } from './components/status-selector/status-selector.component';
+import { PositionWizardComponent } from './components/position-wizard/position-wizard.component';
+import { ContactedComponent } from './components/contacted/contacted.component';
 @NgModule({
     declarations: [
         AppComponent,
         GoogleLoginComponent,
-        StatusSelectorComponent
+        StatusSelectorComponent,
+        PositionWizardComponent,
+        ContactedComponent
     ],
     providers: [],
     bootstrap: [AppComponent],
