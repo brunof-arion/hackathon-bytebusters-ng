@@ -1,0 +1,17 @@
+<div class="status-selector" [formGroup]="statusForm">
+  <mat-form-field appearance="fill">
+    <mat-label>Status</mat-label>
+    <mat-select formControlName="status" [value]="status">
+      <mat-option value="">Please choose a Status...</mat-option>
+      <mat-option value="contacted">contacted</mat-option>
+      <mat-option value="said no">said no</mat-option>
+      <mat-option value="said yes (interview)">said yes (interview)</mat-option>
+      <mat-option value="had questions">had questions</mat-option>
+      <mat-option value="positive interview">positive interview</mat-option>
+      <mat-option value="negative interview">negative interview</mat-option>
+      <mat-option value="discarded candidate">discarded candidate</mat-option>
+      <mat-option value="interviewed">Interviewed</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button mat-raised-button color="primary" (click)="onSubmit()">Update</button>
+</div>
