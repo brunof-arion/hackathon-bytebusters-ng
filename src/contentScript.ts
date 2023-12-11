@@ -40,7 +40,7 @@
     currentProfile.name = userName.innerText;
 
     chrome.storage.local.set({
-      ['currentProfile']: JSON.stringify(currentProfile),
+      'currentProfile': JSON.stringify(currentProfile),
     });
   };
 
@@ -55,7 +55,7 @@
     currentProfile.education = getEducation();
     chrome.storage.local.set(
       {
-        ['currentProfile']: JSON.stringify(currentProfile),
+        'currentProfile': JSON.stringify(currentProfile),
       },
       () => {
         if (chrome.runtime.lastError) {
