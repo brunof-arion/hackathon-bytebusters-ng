@@ -1,5 +1,15 @@
 import { Component, inject, NgZone } from '@angular/core';
-import { combineLatest, finalize } from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  delay,
+  finalize,
+  forkJoin,
+  map,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { LinkedInService } from './services/linkedin.service';
 import { FormControl } from '@angular/forms';
 import { GoogleLoginService } from './components/auth/google-login.service';
@@ -19,6 +29,7 @@ export class AppComponent {
   public loginService = inject(GoogleLoginService);
 
   public isLoading = false;
+  public isExtensionLoading = false;
 
   positionsControl = new FormControl('');
   positions = [] as string[];
@@ -26,7 +37,8 @@ export class AppComponent {
   public userName = '';
   public userAvatar = '';
   public userEmail = '';
-  public isLinkedinPage = false;
+  public isLinkedinPage: boolean | null = null;
+  public candidate = {};
 
   public positionSelected = false;
   public loadingMessage = '';
@@ -52,11 +64,41 @@ export class AppComponent {
       this.userEmail = user.email;
     });
 
-    this.linkedinService.isLinkedin$.subscribe((isLinkedin) => {
-      this.ngZone.run(() => {
-        this.isLinkedinPage = !!isLinkedin;
+    this.linkedinService
+      .isLinkedIn()
+      .pipe(
+        tap(() => this.ngZone.run(() => this.isExtensionLoading = true)),
+        switchMap((isLinkedIn) => {
+          if (isLinkedIn) {
+            return forkJoin({
+              positions: this.linkedinService
+                .getPositions()
+                .pipe(
+                  map((res) => (res as unknown as any[]).map((pos) => pos.name))
+                ),
+              candidate: this.linkedinService.contentLoadedHandler(),
+            }).pipe(
+              tap(({ positions, candidate }) => {
+                console.log(candidate);
+                this.candidate = candidate;
+                this.positions = positions;
+              }),
+              map(() => isLinkedIn)
+            );
+          }
+          return of(isLinkedIn);
+        }),
+        catchError((error) => {
+          console.error('Error occurred:', error);
+          return of(false);
+        }),
+      )
+      .subscribe((isLinkedIn) => {
+        this.ngZone.run(() => {
+          this.isLinkedinPage = !!isLinkedIn;
+          this.isExtensionLoading = false;
+        });
       });
-    });
 
     this.positionsControl.valueChanges.subscribe((selectedPosition) => {
       this.positionSelected = !!selectedPosition?.length;
@@ -89,24 +131,6 @@ export class AppComponent {
           });
         });
     });
-
-    this.linkedinService.contentLoadedHandler().subscribe((res) => {
-      if (res === null) {
-        this.chromeService.getProfileFromLinkedin().subscribe((res) => {
-          console.log('candidate saved:', res);
-        });
-      } else {
-        console.log('get candidate from db:', res);
-      }
-    });
-
-    this.linkedinService.getPositions().subscribe((res) => {
-      this.positions = (res as unknown as any[]).map(
-        (pos) => pos.name
-      ) as unknown as string[];
-    });
-
-    this.chromeService.getProfileFromStorage().subscribe();
   }
 
   public generateMessage() {

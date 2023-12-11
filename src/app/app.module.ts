@@ -15,10 +15,12 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
+import { StatusSelectorComponent } from './components/status-selector/status-selector.component';
 @NgModule({
     declarations: [
         AppComponent,
         GoogleLoginComponent,
+        StatusSelectorComponent
     ],
     providers: [],
     bootstrap: [AppComponent],

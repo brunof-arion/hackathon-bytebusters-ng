@@ -1,5 +1,7 @@
 <main id="container-main" class="container">
-  @if (!isLinkedinPage) {
+  @if (isExtensionLoading) {
+  <mat-spinner></mat-spinner>
+  } @if (isLinkedinPage === false) {
   <div id="not-linkedin-page">Not a LinkedIn profile page</div>
   } @else { @if (!isLogged) {
   <google-auth-button />
@@ -63,61 +65,45 @@
       }
     </div>
     <div class="card-actions">
-      <!-- Not contacted? -->
-      <!-- Show generate message button -->
-      <!-- Contacted? -->
-      <!-- Show contacted message ok & show select? -->
-      @if (!contacted) { @if (!messageGenerated) {
-      <button
-        mat-raised-button
-        (click)="generateMessage()"
-        color="primary"
-        class="btn generate"
-        [disabled]="!positionSelected || isLoading"
-      >
-        <mat-icon
-          aria-hidden="false"
-          aria-label="generate message"
-          fontIcon="create"
-        ></mat-icon>
-        Generate message
-      </button>
-      } @else if (messageGenerated) {
-      <button
-        mat-raised-button
-        (click)="markAsContacted()"
-        color="primary"
-        class="btn generate"
-        [disabled]="!positionSelected || isLoading"
-      >
-        <mat-icon
-          aria-hidden="false"
-          aria-label="mark as contacted"
-          fontIcon="checkmark"
-        ></mat-icon>
-        Mark as contacted
-      </button>
-      } } @else if (contacted) { Candidate was contacted successfully. }
+      @if (!contacted) { 
+        @if (!messageGenerated) {
+          <button
+            mat-raised-button
+            (click)="generateMessage()"
+            color="primary"
+            class="btn generate"
+            [disabled]="!positionSelected || isLoading"
+          >
+            <mat-icon
+              aria-hidden="false"
+              aria-label="generate message"
+              fontIcon="create"
+            ></mat-icon>
+            Generate message
+          </button>
+        } @else if (messageGenerated) {
+          <button
+            mat-raised-button
+            (click)="markAsContacted()"
+            color="primary"
+            class="btn generate"
+            [disabled]="!positionSelected || isLoading"
+          >
+            <mat-icon
+              aria-hidden="false"
+              aria-label="mark as contacted"
+              fontIcon="checkmark"
+            ></mat-icon>
+            Mark as contacted
+          </button>
+        } 
+      } @else if (contacted) { 
+        <p>Candidate was contacted successfully.</p> 
+      }
     </div>
-  </div>
+    <status-selector [status]="'discarded candidate'"></status-selector>
 
+  </div>
   }
-  <!-- <div>
-    <mat-form-field appearance="fill">
-      <mat-label>Status</mat-label>
-      <mat-select>
-        <mat-option value="">Please choose an Status...</mat-option>
-        <mat-option value="contacted">contacted</mat-option>
-        <mat-option value="said no">said no</mat-option>
-        <mat-option value="said yes (interview)">said yes (interview)</mat-option>
-        <mat-option value="had questions">had questions</mat-option>
-        <mat-option value="positive interview">positive interview</mat-option>
-        <mat-option value="negative interview">negative interview</mat-option>
-        <mat-option value="discarded candidate">discarded candidate</mat-option>
-        <mat-option value="interviewed">Interviewed</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <button mat-raised-button color="primary">Update</button>
-  </div> -->
   }
 </main>
