@@ -1,0 +1,61 @@
+{
+    "name": "LI Message Extension",
+    "version": "0.2.0",
+    "description": "Send a custom message based on the candidate's profile",
+    "host_permissions": ["https://*.linkedin.com/*","https://sw7blq3c19.execute-api.us-east-1.amazonaws.com/*"],
+    "manifest_version": 3,
+    "action": {
+        "default_icon": {
+            "16": "assets/ext-icon.png",
+            "24": "assets/ext-icon.png",
+            "32": "assets/ext-icon.png"
+        },
+        "default_title": "Profile Parser",
+        "default_popup": "index.html"
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "permissions": [
+        "identity",
+        "identity.email",
+        "identity.email",
+        "identity.id",
+        "identity.profile",
+        "storage",
+        "tabs"
+    ],
+    "oauth2": {
+        "client_id": "882215026831-oid12hie1mklhhrbtdepp73sn7sjgelv.apps.googleusercontent.com",
+        "scopes": [
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile"
+        ]
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://*.linkedin.com/*"
+            ],
+            "js": [
+                "./contentScript.js"
+            ],
+            "type": "module",
+            "persist": true
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                ""
+            ],
+            "matches": [
+                "https://*.linkedin.com/*"
+            ]
+        }
+    ]
+}
