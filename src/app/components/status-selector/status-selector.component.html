@@ -13,5 +13,5 @@
       <mat-option value="interviewed">Interviewed</mat-option>
     </mat-select>
   </mat-form-field>
-  <button mat-raised-button color="primary" (click)="onSubmit()">Update</button>
+  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!isChanged">Update</button>
 </div>
