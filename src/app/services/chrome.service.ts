@@ -34,7 +34,6 @@ export class ChromeService {
       switchMap((activeTab) => {
         const { id: tabId, url } = activeTab;
         const linkedInProfileId = url?.split('in/')[1];
-        console.log({ activeTab });
         return new Observable((observer) => {
           if (!tabId) {
             observer.error('Active tab ID is undefined');
@@ -68,7 +67,7 @@ export class ChromeService {
     return this.sendMessage({ type: MESSAGE.GET_PROFILE }).pipe(
         switchMap(() => {
           return new Observable((observer) => {
-            chrome.storage.local.get(['currentProfile'], (obj) => {
+            chrome.storage.local.get('currentProfile', (obj) => {
               if (chrome.runtime.lastError) {
                 observer.error(chrome.runtime.lastError);
               } else {

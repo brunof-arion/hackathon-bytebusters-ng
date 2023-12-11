@@ -26,15 +26,9 @@ export class LinkedInService {
   }
 
   createId(name: string | undefined) {
-    if (name) {
-      const lowerCaseStr = name.toLowerCase();
-
-      const formattedStr = lowerCaseStr.replace(/\s+/g, '-');
-
-      return formattedStr;
-    } else {
-      return '';
-    }
+    if (!name) return '';
+    const lowerCaseStr = name.toLowerCase();
+    return lowerCaseStr.replace(/\s+/g, '-');
   }
 
   getCandidate(linkedInProfileId: string | undefined) {
@@ -42,7 +36,7 @@ export class LinkedInService {
     return this.http.get(`${API_ENDPOINTS.getCandidate}?id=${unique_id}`);
   }
 
-  contentLoadedHandler() {
+  isLinkedIn() {
     return this.chromeService.getActiveTab().pipe(
       switchMap((activeTab) => {
         const linkedInProfileId = activeTab.url?.split('in/')[1];
@@ -51,7 +45,16 @@ export class LinkedInService {
         } else {
           this.isLinkedin$.next(false);
         }
-        return this.getCandidate(linkedInProfileId);
+        return this.isLinkedin$.asObservable();
+      })
+    );
+  }
+
+  contentLoadedHandler() {
+    return this.chromeService.getProfileFromLinkedin().pipe(
+      switchMap((profile) => {
+        const unique_id = this.createId(profile.name);
+        return this.getCandidate(unique_id);
       })
     );
   }
@@ -115,9 +118,7 @@ export class LinkedInService {
             ...profile,
           },
         };
-        return this.http.post(API_ENDPOINTS.saveCandidate, {
-          body: data,
-        });
+        return this.http.post(API_ENDPOINTS.saveCandidate, data);
       })
     );
   }
