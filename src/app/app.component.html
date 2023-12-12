@@ -7,13 +7,13 @@
         [userName]="userName"
       ></app-user-profile>
     } @else {
-      <google-auth-button />
+      <google-auth-button (loggedIn)="loggedIn($event)"/>
     }
-  @if (isExtensionLoading) {
+  @if (isExtensionLoading && isLogged) {
     <div class="spinner">
       <mat-spinner [diameter]="200"></mat-spinner>
     </div>
-  } @else if (isExtensionLoading === false) {
+  } @else if (isExtensionLoading === false && isLogged) {
     @if (isLinkedinPage === false) {
     <div id="not-linkedin-page">Not a LinkedIn profile page</div>
     } @else {

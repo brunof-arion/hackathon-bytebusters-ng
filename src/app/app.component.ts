@@ -2,7 +2,7 @@ import { Component, inject, NgZone } from '@angular/core';
 import { catchError, finalize, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { LinkedInService } from './services/linkedin.service';
 import { FormControl } from '@angular/forms';
-import { GoogleLoginService } from './components/auth/google-login.service';
+import { GoogleLoginService } from './services/google-login.service';
 import { ChromeService } from './services/chrome.service';
 
 interface ICandidate {
@@ -33,7 +33,6 @@ export class AppComponent {
   public isLoading = false;
   public isExtensionLoading = false;
 
-  positionsControl = new FormControl('');
   positions = [] as string[];
 
   public userName = '';
@@ -56,6 +55,8 @@ export class AppComponent {
   public alreadyContacted: boolean | null = null;
 
   ngOnInit() {
+    // clear everything?
+
     this.loginService.checkSignIn().subscribe((logged) => {
       this.ngZone.run(() => {
         this.isLogged = !!logged;
@@ -75,6 +76,7 @@ export class AppComponent {
         switchMap((isLinkedIn) => {
           if (isLinkedIn) {
             return forkJoin({
+              clearedStash: this.chromeService.clearStashedProfile(),
               positions: this.linkedinService
                 .getPositions()
                 .pipe(
@@ -86,6 +88,7 @@ export class AppComponent {
                 this.candidate = candidate as ICandidate;
                 this.positions = positions;
                 if (candidate) {
+                  console.log('run at linkedin service', candidate);
                   this.alreadyContacted = true;
                 }
               }),
@@ -107,6 +110,14 @@ export class AppComponent {
       });
   }
 
+  loggedIn(loggedIn: boolean) {
+    this.ngZone.run(() => {
+      this.isLogged = loggedIn;
+      // TODO: Improve logic
+      this.isExtensionLoading = false;
+    });
+  }
+
   candidateEvaluatedHandler(evaluated: boolean) {
     if (evaluated) {
       this.candidateEvaluated = true;
@@ -115,85 +126,70 @@ export class AppComponent {
 
   public generateMessage() {
     this.candidateEvaluated = false;
-    if (this.positionsControl) {
-      this.isLoading = true;
-      this.loadingMessage = 'Message generation in process';
-      this.linkedinService
-        .getGeneratedMessage({
-          position: this.positionsControl.value
-            ? this.positionsControl.value
-            : '',
-          userEmail: this.userEmail,
-          userName: this.userName,
+    this.isLoading = true;
+    this.loadingMessage = 'Message generation in process';
+    this.chromeService
+      .getPositionFromStorage()
+      .pipe(
+        switchMap((position) => {
+          return this.linkedinService.getGeneratedMessage({
+            position: position,
+            userEmail: this.userEmail,
+            userName: this.userName,
+          });
         })
-        .subscribe({
-          next: (res) => {
-            console.log('res previous parse', res);
-            let parsedResponse = JSON.parse((res as any).content);
-            this.chromeService
-              .getActiveTab()
-              .pipe(
-                finalize(() => {
-                  this.ngZone.run(() => {
-                    this.isLoading = false;
-                    this.loadingMessage = '';
-                    this.messageGenerated = true;
-                  });
-                })
-              )
-              .subscribe((activeTab) => {
-                const { id: tabId } = activeTab;
-                chrome.tabs.sendMessage(tabId!, {
-                  type: 'SET_MESSAGE',
-                  message: parsedResponse.message,
+      )
+      .subscribe({
+        next: (res) => {
+          console.log(res)
+          let parsedResponse = JSON.parse((res as any).content);
+          this.chromeService.updateCurrentProfile({
+            years_of_experience: parsedResponse.years_of_experience,
+            country: parsedResponse.country,
+            current_company: parsedResponse.current_company,
+          });
+          this.chromeService
+            .getActiveTab()
+            .pipe(
+              finalize(() => {
+                this.ngZone.run(() => {
+                  this.isLoading = false;
+                  this.loadingMessage = '';
+                  this.messageGenerated = true;
                 });
+              })
+            )
+            .subscribe((activeTab) => {
+              const { id: tabId } = activeTab;
+              chrome.tabs.sendMessage(tabId!, {
+                type: 'SET_MESSAGE',
+                message: parsedResponse.message,
               });
-          },
-          error: (error) => {
-            // TODO: Show something to the user?
-            console.error('error in generateMessage', error);
-            this.isLoading = false;
-            this.loadingMessage = '';
-          },
-        });
-    }
+            });
+        },
+        error: (error) => {
+          // TODO: Show something to the user?
+          console.error('error in generateMessage', error);
+          this.isLoading = false;
+          this.loadingMessage = '';
+        },
+      });
   }
 
   markAsContacted() {
-    this.linkedinService.saveCandidate()
+    this.linkedinService
+      .saveCandidate()
       .pipe(
-        switchMap(savedCandidate => {
-          return this.linkedinService.updateStatus('contacted')
+        switchMap((savedCandidate) => {
+          return this.linkedinService.updateStatus('contacted');
         })
-      ).subscribe((updatedCandidate: any) => {
+      )
+      .subscribe((updatedCandidate: any) => {
         this.ngZone.run(() => {
-          console.log(updatedCandidate, this.candidate);
           this.candidate = updatedCandidate;
           this.contacted = true;
           this.alreadyContacted = true;
         });
-      })
-
-    // this.linkedinService.updateStatus('contacted').subscribe(() => {
-    //   this.linkedinService
-    //     .saveCandidate()
-    //     .pipe(
-    //       switchMap((candidate: any) => {
-    //         console.log('pre candidate');
-    //         return this.linkedinService.getCandidate(
-    //           this.linkedinService.createId(candidate.name)
-    //         );
-    //       })
-    //     )
-    //     .subscribe((savedCandidate: any) => {
-    //       console.log('candidate saved', savedCandidate);
-    //       this.ngZone.run(() => {
-    //         console.log(savedCandidate, this.candidate);
-    //         this.candidate = savedCandidate;
-    //         this.contacted = true;
-    //         this.alreadyContacted = true;
-    //       });
-    //     });
-    // });
+      });
   }
 }

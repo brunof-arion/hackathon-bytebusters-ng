@@ -63,30 +63,34 @@ export class ChromeService {
     );
   }
 
+  clearStashedProfile(): Observable<any> {
+    return this.sendMessage({ type: MESSAGE.NEW });
+  }
+
   getProfileFromLinkedin(): Observable<any> {
     return this.sendMessage({ type: MESSAGE.GET_PROFILE }).pipe(
-        switchMap(() => {
-          return new Observable((observer) => {
-            chrome.storage.local.get('currentProfile', (obj) => {
-              if (chrome.runtime.lastError) {
-                observer.error(chrome.runtime.lastError);
-              } else {
-                const profile = obj['currentProfile']
-                  ? JSON.parse(obj['currentProfile'])
-                  : {};
-                observer.next(profile);
-                observer.complete();
-              }
-            });
+      switchMap(() => {
+        return new Observable((observer) => {
+          chrome.storage.local.get('currentProfile', (obj) => {
+            if (chrome.runtime.lastError) {
+              observer.error(chrome.runtime.lastError);
+            } else {
+              const profile = obj['currentProfile']
+                ? JSON.parse(obj['currentProfile'])
+                : {};
+              observer.next(profile);
+              observer.complete();
+            }
           });
-        })
-      );
+        });
+      })
+    );
   }
 
   getProfileFromStorage(): Observable<any> {
     return new Observable((observer) => {
       chrome.storage.local.get('currentProfile', (result) => {
-        console.log("getProfileFromStorage ", result);
+        console.log('getProfileFromStorage ', result);
         if (chrome.runtime.lastError) {
           observer.error(chrome.runtime.lastError);
           observer.complete();
@@ -105,17 +109,50 @@ export class ChromeService {
   getPositionFromStorage(): Observable<string> {
     return new Observable((observer) => {
       chrome.storage.local.get('position', (result) => {
-        console.log("position from storage in getPositionFromStorage", result)
+        console.log('position from storage in getPositionFromStorage', result);
         if (chrome.runtime.lastError) {
           observer.error(chrome.runtime.lastError);
           observer.complete();
           return;
         }
 
-        const position = result['position'] || "";
+        const position = result['position'] || '';
         observer.next(position);
         observer.complete();
       });
     });
+  }
+
+  getCurrentLocation(): Observable<string> {
+    return new Observable((observer) => {
+      chrome.storage.local.get('currentLocation', (result) => {
+        console.log('location at getCurrentLocation', result);
+        if (chrome.runtime.lastError) {
+          observer.error(chrome.runtime.lastError);
+          observer.complete();
+          return;
+        }
+
+        const position = result['currentLocation'] || '';
+        observer.next(position);
+        observer.complete();
+      });
+    });
+  }
+
+  updateCurrentProfile(updatedProfile: any): Observable<any> {
+    return this.getProfileFromStorage().pipe(
+      switchMap((profile) => {
+        return this.sendMessage({
+          type: MESSAGE.UPDATE_PROFILE,
+          message: JSON.stringify({ ...profile, ...updatedProfile }),
+        });
+        // return new Observable((observer) => {
+        //   chrome.storage.local.set({'currentProfile': {...profile, ...updatedProfile}});
+        //   observer.next({...profile, ...updatedProfile});
+        //   observer.complete();
+        // })
+      })
+    );
   }
 }

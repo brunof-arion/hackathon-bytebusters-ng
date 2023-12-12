@@ -9,4 +9,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 export class ContactedComponent {
   @Input() public status!: string;
 
+  selectedStatus(status: string) {
+    this.status = status;
+  }
+
 }

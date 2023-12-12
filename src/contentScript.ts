@@ -18,6 +18,9 @@
     if (type === 'SET_MESSAGE') {
       setGeneratedMessage(message);
     }
+    if(type === 'UPDATE_PROFILE') {
+      setUpdateProfule(message);
+    }
   };
 
   chrome.runtime.onMessage.addListener(onMessageHandler);
@@ -31,7 +34,7 @@
   };
 
   const savePosition = (message) => {
-    chrome.storage.local.set({ 'position': message });
+    chrome.storage.local.set({ position: message });
   };
 
   const newProfileLoaded = (linkedInProfileId) => {
@@ -40,7 +43,7 @@
     currentProfile.name = userName.innerText;
 
     chrome.storage.local.set({
-      'currentProfile': JSON.stringify(currentProfile),
+      currentProfile: JSON.stringify(currentProfile),
     });
   };
 
@@ -53,23 +56,24 @@
     currentProfile.about = getAbout();
     currentProfile.experience = getExperience();
     currentProfile.education = getEducation();
-    chrome.storage.local.set(
-      {
-        'currentProfile': JSON.stringify(currentProfile),
-      },
-      () => {
-        if (chrome.runtime.lastError) {
-            console.log('in getProfile', chrome.runtime.lastError);
-        } else {
-            console.log('saved profile locally', currentProfile)
-        }
-      }
-    );
+
+    chrome.storage.local.set({
+      currentProfile: JSON.stringify(currentProfile),
+      currentLocation: document.location.href
+    });
   };
+
+  const setUpdateProfule = (message) => {
+    currentProfile = {...currentProfile, ...JSON.parse(message)};
+  }
 
   const getAbout = () => {
     const siblings = getSiblingsById('about');
-    return getDeepestSpanInnerText(siblings[1]);
+    if (siblings.length) {
+      return getDeepestSpanInnerText(siblings[1]);
+    } else {
+      return '';
+    }
   };
 
   const getSiblingsById = (elementId) => {
@@ -78,7 +82,6 @@
       console.error(`Element with ID '${elementId}' not found.`);
       return [];
     }
-
     const parentElement = targetElement.parentNode;
     return Array.from(parentElement.children).filter(
       (child) => child !== targetElement
@@ -156,9 +159,6 @@
         position: position.position,
       };
       await sendPost(data);
-      console.log(
-        `Sending profile ${JSON.stringify(currentProfile)} to backend`
-      );
     };
 
     sendMessageLinkedInButton.addEventListener('click', sendMessageHandler);
@@ -176,9 +176,6 @@
 
     if (messageButton) {
       messageButton.click();
-      console.log('Message button found:', messageButton);
-    } else {
-      console.log('Message button not found');
     }
   };
 
@@ -198,15 +195,15 @@
         typeof window.getSelection != 'undefined' &&
         typeof document.createRange != 'undefined'
       ) {
-        var range = document.createRange();
+        const range = document.createRange();
         range.selectNodeContents(editableDiv);
         range.collapse(false);
-        var sel = window.getSelection();
+        const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
       }
 
-      var event = new Event('input', {
+      const event = new Event('input', {
         bubbles: true,
         cancelable: true,
       });

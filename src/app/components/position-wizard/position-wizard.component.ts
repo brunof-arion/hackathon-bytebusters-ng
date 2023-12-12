@@ -12,7 +12,7 @@ import { catchError, combineLatest, finalize, of } from 'rxjs';
 import { LinkedInService } from '../../services/linkedin.service';
 import { ChromeService } from '../../services/chrome.service';
 import { MESSAGE } from '../../services/message';
-import { GoogleLoginService } from '../auth/google-login.service';
+import { GoogleLoginService } from '../../services/google-login.service';
 
 @Component({
   selector: 'position-wizard',

@@ -17,12 +17,12 @@ export class LinkedInService {
 
   isLinkedin$ = new BehaviorSubject(false);
 
-  getPositions() {
-    return this.http.get(API_ENDPOINTS.getPositions);
-  }
-
   constructor() {
     this.isLinkedin$.pipe(filter((value) => value === true));
+  }
+
+  getPositions() {
+    return this.http.get(API_ENDPOINTS.getPositions);
   }
 
   createId(name: string | undefined) {
@@ -109,13 +109,16 @@ export class LinkedInService {
     return combineLatest([
       this.chromeService.getProfileFromStorage(),
       this.chromeService.getPositionFromStorage(),
+      this.chromeService.getCurrentLocation(),
     ]).pipe(
-      switchMap(([profile, position]) => {
+      switchMap(([profile, position, currentLocation]) => {
         console.log('get position from storage', position);
+        console.log("current location", currentLocation);
         const data = {
           content: {
-            position: position,
             ...profile,
+            position: position,
+            url: currentLocation,
           },
         };
         return this.http.post(API_ENDPOINTS.saveCandidate, data);

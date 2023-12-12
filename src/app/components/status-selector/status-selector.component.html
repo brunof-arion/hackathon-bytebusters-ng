@@ -13,5 +13,19 @@
       <mat-option value="interviewed">Interviewed</mat-option>
     </mat-select>
   </mat-form-field>
-  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!isChanged">Update</button>
+  <mat-progress-bar
+    [ngStyle]="{
+      visibility: !isLoading ? 'hidden' : ''
+    }"
+    style="margin-bottom: 6px;"
+    [mode]="'query'"
+  ></mat-progress-bar>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="!isChanged"
+  >
+    Update
+  </button>
 </div>
